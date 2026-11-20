@@ -32,12 +32,14 @@ exports.getCartController = async (req, res) => {
         }));
 
         const subtotal = items.reduce((sum, it) => sum + (it.effectivePrice * it.qty), 0);
-        const count = items.reduce((sum, it) => sum + it.qty, 0);
+        const count = items.length; // Count of different/unique products
+        const totalQuantity = items.reduce((sum, it) => sum + it.qty, 0);
 
         return res.status(200).json({
             success: true,
             items,
             count,
+            totalQuantity,
             subtotal
         });
     } catch (error) {

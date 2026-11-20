@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { uploadProductImage, deleteCloudinaryImage } = require("../config/cloudinary");
 
 // Helper to format product row
 function formatProduct(p) {
@@ -181,7 +182,13 @@ exports.addProductController = async (req, res) => {
     try {
         const { id, name, cat, sub, price, offer, desc, ingredients, status, imageUrl } = req.body;
 
-        const imgPath = req.file ? `/uploads/${req.file.filename}` : (imageUrl || req.body.img);
+        let imgPath = null;
+        if (req.file) {
+            const cloudUrl = await uploadProductImage(req.file.path);
+            imgPath = cloudUrl || `/uploads/${req.file.filename}`;
+        } else {
+            imgPath = imageUrl || req.body.img;
+        }
 
         if (!name || !cat || !price) {
             return res.status(400).json({
@@ -264,7 +271,14 @@ exports.updateProductController = async (req, res) => {
         }
 
         const current = existing[0];
-        const newImg = req.file ? `/uploads/${req.file.filename}` : (imageUrl || req.body.img || current.img);
+        let newImg = current.img;
+        if (req.file) {
+            const cloudUrl = await uploadProductImage(req.file.path);
+            newImg = cloudUrl || `/uploads/${req.file.filename}`;
+        } else if (imageUrl || req.body.img) {
+            newImg = imageUrl || req.body.img;
+        }
+
         const newPrice = price !== undefined ? parseFloat(price) : current.price;
         const newOffer = offer !== undefined ? (offer === "" || offer === null ? null : parseFloat(offer)) : current.offer;
         const newStatus = status !== undefined ? status : current.status;
@@ -330,6 +344,10 @@ exports.deleteProductController = async (req, res) => {
         }
 
         await pool.query("DELETE FROM products WHERE id = ?", [id]);
+
+        if (existing[0].img) {
+            deleteCloudinaryImage(existing[0].img).catch(() => {});
+        }
 
         return res.status(200).json({
             success: true,

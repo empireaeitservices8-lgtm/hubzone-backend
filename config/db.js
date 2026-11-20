@@ -3,27 +3,49 @@ const bcrypt = require('bcrypt');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const dbName = process.env.DB_NAME || 'hubzone_db';
+let targetDatabase = process.env.DB_NAME || 'hubzone_db';
+let poolConfig;
 
-const poolConfig = process.env.DATABASE_URL
-    ? {
-        uri: process.env.DATABASE_URL,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-        ssl: { rejectUnauthorized: false }
+if (process.env.DATABASE_URL) {
+    try {
+        const parsed = new URL(process.env.DATABASE_URL);
+        const pathDb = parsed.pathname ? parsed.pathname.replace(/^\//, '') : '';
+        if (pathDb && pathDb !== 'sys') {
+            targetDatabase = pathDb;
+        }
+        poolConfig = {
+            host: parsed.hostname,
+            port: Number(parsed.port) || 3306,
+            user: decodeURIComponent(parsed.username),
+            password: decodeURIComponent(parsed.password),
+            database: targetDatabase,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0,
+            ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true }
+        };
+    } catch {
+        poolConfig = {
+            uri: process.env.DATABASE_URL,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0,
+            ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true }
+        };
     }
-    : {
+} else {
+    poolConfig = {
         host: process.env.DB_HOST || 'localhost',
         user: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD || '',
-        database: dbName,
+        database: targetDatabase,
         port: Number(process.env.DB_PORT) || 3306,
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
+        ssl: process.env.DB_SSL === 'true' ? { minVersion: 'TLSv1.2', rejectUnauthorized: true } : undefined
     };
+}
 
 const pool = mysql.createPool(poolConfig);
 
@@ -333,7 +355,7 @@ const INITIAL_PRODUCTS = [
 async function initDB() {
     try {
         const connection = await pool.getConnection();
-        console.log("MySQL / TiDB Database connected successfully to:", dbName);
+        console.log("MySQL / TiDB Database connected successfully to:", targetDatabase);
 
         // 1. Users table
         await connection.query(`
