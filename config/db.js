@@ -435,6 +435,9 @@ async function initDB() {
                 state VARCHAR(100) NULL,
                 pin VARCHAR(20) NULL,
                 payment_method VARCHAR(100) DEFAULT 'Cash on Delivery',
+                payment_status VARCHAR(50) DEFAULT 'Pending',
+                razorpay_order_id VARCHAR(100) NULL,
+                razorpay_payment_id VARCHAR(100) NULL,
                 order_status ENUM('Placed', 'Shipped', 'Delivered', 'Cancelled') DEFAULT 'Placed',
                 subtotal DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                 delivery_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -444,6 +447,11 @@ async function initDB() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
+
+        // Ensure razorpay columns exist if table was already created earlier
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'Pending'`).catch(() => {});
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_order_id VARCHAR(100) NULL`).catch(() => {});
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_payment_id VARCHAR(100) NULL`).catch(() => {});
 
         // Check if admin user exists, if not create default admin
         const adminEmail = (process.env.ADMIN_EMAIL || 'admin@hubzone.com').toLowerCase();

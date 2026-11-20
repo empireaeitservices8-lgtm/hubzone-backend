@@ -4,6 +4,7 @@ const productController = require('../controllers/productController');
 const cartController = require('../controllers/cartController');
 const orderController = require('../controllers/orderController');
 const reviewController = require('../controllers/reviewController');
+const paymentController = require('../controllers/paymentController');
 
 const adminMiddleware = require('../middlewares/adminMiddleware');
 const jwtMiddleware = require('../middlewares/jwtMiddleware');
@@ -85,6 +86,13 @@ router.post('/review/add', jwtMiddleware, reviewController.addReviewController);
 // Admin Review Management
 router.get('/admin/reviews', adminMiddleware, reviewController.getAllReviewsController);
 router.delete('/review/:id', jwtMiddleware, reviewController.deleteReviewController);
+
+// ==========================================
+// 6. PAYMENT ROUTES (Razorpay)
+// ==========================================
+router.get('/payment/razorpay/config', paymentController.getRazorpayConfigController);
+router.post('/payment/razorpay/create-order', jwtMiddleware, paymentController.createRazorpayOrderController);
+router.post('/payment/razorpay/verify', jwtMiddleware, paymentController.verifyRazorpayPaymentController);
 
 module.exports = router;
 
