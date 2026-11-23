@@ -23,6 +23,11 @@ function parseOrder(o) {
         paymentStatus: o.payment_status || (o.payment_method === 'Cash on Delivery' ? 'Pending' : 'Paid'),
         razorpayOrderId: o.razorpay_order_id,
         razorpayPaymentId: o.razorpay_payment_id,
+        shiprocketOrderId: o.shiprocket_order_id,
+        shiprocketShipmentId: o.shiprocket_shipment_id,
+        awbCode: o.awb_code,
+        courierName: o.courier_name,
+        trackingUrl: o.tracking_url,
         orderStatus: o.order_status,
         subtotal: parseFloat(o.subtotal) || 0,
         deliveryFee: parseFloat(o.delivery_fee) || 0,
@@ -70,6 +75,14 @@ exports.createOrderController = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Delivery address and phone number are required."
+            });
+        }
+
+        // Online orders must always be verified through /payment/razorpay/verify
+        if (paymentMethod && (paymentMethod.toLowerCase().includes('online') || paymentMethod.toLowerCase().includes('razorpay'))) {
+            return res.status(400).json({
+                success: false,
+                message: "Online payment orders must be completed and verified through Razorpay before order creation."
             });
         }
 

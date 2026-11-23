@@ -5,6 +5,7 @@ const cartController = require('../controllers/cartController');
 const orderController = require('../controllers/orderController');
 const reviewController = require('../controllers/reviewController');
 const paymentController = require('../controllers/paymentController');
+const shiprocketController = require('../controllers/shiprocketController');
 
 const adminMiddleware = require('../middlewares/adminMiddleware');
 const jwtMiddleware = require('../middlewares/jwtMiddleware');
@@ -93,6 +94,15 @@ router.delete('/review/:id', jwtMiddleware, reviewController.deleteReviewControl
 router.get('/payment/razorpay/config', paymentController.getRazorpayConfigController);
 router.post('/payment/razorpay/create-order', jwtMiddleware, paymentController.createRazorpayOrderController);
 router.post('/payment/razorpay/verify', jwtMiddleware, paymentController.verifyRazorpayPaymentController);
+
+// ==========================================
+// 7. SHIPROCKET SHIPPING ROUTES
+// ==========================================
+router.get('/shiprocket/serviceability', shiprocketController.checkServiceabilityController);
+router.get('/shiprocket/track/:query', shiprocketController.trackOrderController);
+router.get('/admin/shiprocket/config', adminMiddleware, shiprocketController.getConfigController);
+router.post('/admin/shiprocket/create-order/:orderId', adminMiddleware, shiprocketController.createShipmentController);
+router.post('/admin/shiprocket/assign-awb/:orderId', adminMiddleware, shiprocketController.assignAwbController);
 
 module.exports = router;
 

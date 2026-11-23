@@ -438,6 +438,11 @@ async function initDB() {
                 payment_status VARCHAR(50) DEFAULT 'Pending',
                 razorpay_order_id VARCHAR(100) NULL,
                 razorpay_payment_id VARCHAR(100) NULL,
+                shiprocket_order_id VARCHAR(100) NULL,
+                shiprocket_shipment_id VARCHAR(100) NULL,
+                awb_code VARCHAR(100) NULL,
+                courier_name VARCHAR(100) NULL,
+                tracking_url VARCHAR(500) NULL,
                 order_status ENUM('Placed', 'Shipped', 'Delivered', 'Cancelled') DEFAULT 'Placed',
                 subtotal DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                 delivery_fee DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -448,10 +453,15 @@ async function initDB() {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
 
-        // Ensure razorpay columns exist if table was already created earlier
+        // Ensure razorpay & shiprocket columns exist if table was already created earlier
         await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'Pending'`).catch(() => {});
         await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_order_id VARCHAR(100) NULL`).catch(() => {});
         await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_payment_id VARCHAR(100) NULL`).catch(() => {});
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS shiprocket_order_id VARCHAR(100) NULL`).catch(() => {});
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS shiprocket_shipment_id VARCHAR(100) NULL`).catch(() => {});
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS awb_code VARCHAR(100) NULL`).catch(() => {});
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name VARCHAR(100) NULL`).catch(() => {});
+        await connection.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_url VARCHAR(500) NULL`).catch(() => {});
 
         // Check if admin user exists, if not create default admin
         const adminEmail = (process.env.ADMIN_EMAIL || 'admin@hubzone.com').toLowerCase();
