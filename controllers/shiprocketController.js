@@ -240,6 +240,19 @@ exports.trackOrderController = async (req, res) => {
 
         const trackResult = await trackShipment(awbToTrack);
 
+        // Auto-sync status with database if delivered
+        const rawStatus = (
+            trackResult?.current_status ||
+            trackResult?.tracking_data?.shipment_track?.[0]?.current_status ||
+            trackResult?.status ||
+            ''
+        ).toUpperCase();
+
+        if (matchedOrder && matchedOrder.orderStatus !== 'Delivered' && rawStatus.includes('DELIVER')) {
+            await pool.query("UPDATE orders SET order_status = 'Delivered', updated_at = NOW() WHERE id = ?", [matchedOrder.id]);
+            matchedOrder.orderStatus = 'Delivered';
+        }
+
         return res.status(200).json({
             success: true,
             order: matchedOrder,
@@ -302,5 +315,42 @@ exports.checkServiceabilityController = async (req, res) => {
             message: error.message || 'Failed to check pincode serviceability.',
             error: error.message
         });
+    }
+};
+
+// 6. Webhook for real-time status updates from Shiprocket (Auto mark delivered/shipped)
+exports.shiprocketWebhookController = async (req, res) => {
+    try {
+        const payload = req.body || {};
+        const awb = payload.awb || payload.awb_code;
+        const currentStatus = String(payload.current_status || payload.status || '').toUpperCase();
+        const orderId = payload.order_id;
+
+        if (!awb && !orderId) {
+            return res.status(200).json({ success: true, message: 'No identifiable order in payload.' });
+        }
+
+        let newStatus = null;
+        if (currentStatus.includes('DELIVER')) {
+            newStatus = 'Delivered';
+        } else if (currentStatus.includes('CANCEL') || currentStatus.includes('RTO')) {
+            newStatus = 'Cancelled';
+        } else if (currentStatus.includes('OUT') || currentStatus.includes('TRANSIT') || currentStatus.includes('PICK') || currentStatus.includes('SHIP')) {
+            newStatus = 'Shipped';
+        }
+
+        if (newStatus) {
+            await pool.query(
+                `UPDATE orders 
+                 SET order_status = ?, updated_at = NOW() 
+                 WHERE awb_code = ? OR order_number = ? OR shiprocket_order_id = ?`,
+                [newStatus, awb || '', orderId || '', payload.shipment_id || '']
+            );
+        }
+
+        return res.status(200).json({ success: true, updatedStatus: newStatus });
+    } catch (error) {
+        console.error('Shiprocket webhook error:', error);
+        return res.status(500).json({ success: false, error: error.message });
     }
 };

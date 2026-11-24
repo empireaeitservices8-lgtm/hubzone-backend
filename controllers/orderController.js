@@ -324,3 +324,39 @@ exports.cancelMyOrderController = async (req, res) => {
     }
 };
 
+// Admin: Permanently delete order from database
+exports.deleteOrderController = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const [existing] = await pool.query(
+            "SELECT id, order_number FROM orders WHERE id = ? OR order_number = ? LIMIT 1",
+            [id, id]
+        );
+
+        if (existing.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found."
+            });
+        }
+
+        const orderId = existing[0].id;
+        const orderNumber = existing[0].order_number;
+
+        await pool.query("DELETE FROM orders WHERE id = ?", [orderId]);
+
+        return res.status(200).json({
+            success: true,
+            message: `Order #${orderNumber} has been permanently deleted from database.`
+        });
+    } catch (error) {
+        console.error("Delete order error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete order from database.",
+            error: error.message
+        });
+    }
+};
+

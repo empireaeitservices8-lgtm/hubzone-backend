@@ -1,7 +1,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const SHIPROCKET_API_BASE = 'https://apiv2.shiprocket.in/v2/console';
+const SHIPROCKET_API_BASE = 'https://apiv2.shiprocket.in/v1/external';
 
 let cachedToken = null;
 let tokenExpiresAt = 0;

@@ -77,6 +77,7 @@ router.put('/myOrders/cancel/:id', jwtMiddleware, orderController.cancelMyOrderC
 // Admin Order Management
 router.get('/admin/orders', adminMiddleware, orderController.getAllOrdersController);
 router.put('/order/status/:id', adminMiddleware, orderController.updateOrderStatusController);
+router.delete('/admin/orders/:id', adminMiddleware, orderController.deleteOrderController);
 
 // ==========================================
 // 5. REVIEW ROUTES
@@ -100,6 +101,7 @@ router.post('/payment/razorpay/verify', jwtMiddleware, paymentController.verifyR
 // ==========================================
 router.get('/shiprocket/serviceability', shiprocketController.checkServiceabilityController);
 router.get('/shiprocket/track/:query', shiprocketController.trackOrderController);
+router.post('/shiprocket/webhook', shiprocketController.shiprocketWebhookController);
 router.get('/admin/shiprocket/config', adminMiddleware, shiprocketController.getConfigController);
 router.post('/admin/shiprocket/create-order/:orderId', adminMiddleware, shiprocketController.createShipmentController);
 router.post('/admin/shiprocket/assign-awb/:orderId', adminMiddleware, shiprocketController.assignAwbController);
